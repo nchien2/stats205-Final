@@ -55,7 +55,7 @@ def preprocess(data):
     data = data.loc[median_num_detected - data['num_detected'] <= 3 * mad]
 
     # Extract the features and the labels
-    X = data.iloc[:, 2:-1].to_numpy()
+    X = np.nan_to_num(data.iloc[:, 2:-1].to_numpy())
     y = data.loc[:, 'label'].to_numpy()
 
     return X, y
@@ -80,16 +80,53 @@ def load_dataset(datadir, dataset):
                                 delimiter='\t', skiprows=1, names=['cell', 'label'])
 
         # Formatting data
-        samples['cell'] = samples['cell'].astype('string')
-        labels['cell'] = labels['cell'].astype('string')
+        samples['cell'] = samples['cell'].astype('str')
+        labels['cell'] = labels['cell'].astype('str')
         labels['cell'] = labels['cell'].apply(lambda name: name.replace('.', '-'))
 
         # Merge samples with features to labels
         data = samples.merge(labels, on='cell', how='inner')
 
     elif dataset == 'tabula-muris':
-        raise NotImplementedError()
+        TISSUES = ['Aorta','Bladder', 'Brain_Myeloid', 'Brain_Non-Myeloid', 'Diaphragm', 'Fat',
+                   'Heart', 'Kidney', 'Large_Intestine', 'Limb_Muscle', 'Liver', 'Lung',
+                   'Mammary_Gland', 'Marrow', 'Pancreas', 'Skin', 'Spleen', 'Thymus', 'Tongue',
+                   'Trachea']
 
+        # Smaller dataset for testing
+        #TISSUES = ['Aorta', 'Bladder', 'Brain_Myeloid']
+
+        # More annotation data available, but not necessary
+        labels = pd.read_csv('data/annotations_facs.csv', 
+                              dtype={'Neurog3>0_raw': str,
+                                    'Neurog3>0_scaled':str},
+                              delimiter=',')
+        labels = labels[['cell','tissue']]
+        labels = labels.rename({'tissue':'label'}, axis='columns')
+
+
+        # Download read counts for each cell type
+        df_list = []
+        for tissue in TISSUES:
+            print('Reading Data...  -  {}'.format(tissue))
+            samples = pd.read_csv('data/FACS/{}-counts.csv'.format(tissue), delimiter = ',').transpose()
+
+            # Set the header equal to the gene names
+            head = samples.iloc[0]
+            samples = samples[1:]
+            samples.columns = head
+            samples.index.name = 'cell'
+            samples.reset_index(inplace=True)
+
+            # Formatting data
+            samples['cell'] = samples['cell'].astype('str')
+            labels['cell'] = labels['cell'].astype('str')
+
+            # Merge samples with features to labels
+            data = samples.merge(labels, on='cell', how='inner')
+            df_list.append(data)
+        data = pd.concat(df_list, ignore_index=True, sort=False)
+        
     else:
         raise ValueError('Invalid dataset: {}'.format(dataset))
     
