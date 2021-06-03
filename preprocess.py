@@ -97,7 +97,7 @@ def load_dataset(datadir, dataset):
         #TISSUES = ['Aorta', 'Bladder', 'Brain_Myeloid']
 
         # More annotation data available, but not necessary
-        labels = pd.read_csv('data/annotations_facs.csv', 
+        labels = pd.read_csv('data/muris/annotations_facs.csv', 
                               dtype={'Neurog3>0_raw': str,
                                     'Neurog3>0_scaled':str},
                               delimiter=',')
@@ -109,7 +109,7 @@ def load_dataset(datadir, dataset):
         df_list = []
         for tissue in TISSUES:
             print('Reading Data...  -  {}'.format(tissue))
-            samples = pd.read_csv('data/FACS/{}-counts.csv'.format(tissue), delimiter = ',').transpose()
+            samples = pd.read_csv('data/muris/FACS/{}-counts.csv'.format(tissue), delimiter = ',').transpose()
 
             # Set the header equal to the gene names
             head = samples.iloc[0]
